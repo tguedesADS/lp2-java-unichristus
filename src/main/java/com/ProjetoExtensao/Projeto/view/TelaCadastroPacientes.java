@@ -10,16 +10,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.swing.*;
+import javax.swing.text.MaskFormatter;
 import java.awt.*;
+import java.text.ParseException;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 
 @Component
 @NoArgsConstructor
 public class TelaCadastroPacientes extends JFrame {
     @Autowired
     private PacienteService pacienteService;
+    
+    @Autowired
+    private TelaPacientes telaPacientes;
 
-    private JTextField txtNome, txtCartaoSUS, txtCPF, txtDataNasc, txtNomeMae, txtDataEntrada;
+    private JTextField txtNome, txtCartaoSUS, txtNomeMae;
+    private JFormattedTextField txtCPF, txtDataNasc, txtDataEntrada;
 
     @PostConstruct
     public void initUI() {
@@ -61,14 +68,14 @@ public class TelaCadastroPacientes extends JFrame {
         grid.gridy++;
         panelMain.add(createLabel("CPF:", fonteLabel), grid);
         grid.gridx = 1;
-        txtCPF = createTextField(fonteCampo);
+        txtCPF = createFormattedTextField("###.###.###-##", fonteCampo);
         panelMain.add(txtCPF, grid);
 
         // Data de nascimento
         grid.gridx = 2;
         panelMain.add(createLabel("Data de Nascimento:", fonteLabel), grid);
         grid.gridx = 3;
-        txtDataNasc = createTextField(fonteCampo);
+        txtDataNasc = createFormattedTextField("##/##/####", fonteCampo);
         panelMain.add(txtDataNasc, grid);
 
         // Situação
@@ -97,9 +104,9 @@ public class TelaCadastroPacientes extends JFrame {
 
         // Data de entrada
         grid.gridx = 2;
-        panelMain.add(createLabel("Date de Entrada:", fonteLabel), grid);
+        panelMain.add(createLabel("Data de Entrada:", fonteLabel), grid);
         grid.gridx = 3;
-        txtDataEntrada = createTextField(fonteCampo);
+        txtDataEntrada = createFormattedTextField("##/##/####", fonteCampo);
         panelMain.add(txtDataEntrada, grid);
 
         // Botões
@@ -137,6 +144,21 @@ public class TelaCadastroPacientes extends JFrame {
         return txt;
     }
 
+    // Método para criar campo formatado com máscara
+    private JFormattedTextField createFormattedTextField(String mask, Font font) {
+        JFormattedTextField txt = null;
+        try {
+            MaskFormatter formatter = new MaskFormatter(mask);
+            formatter.setPlaceholderCharacter('_');
+            txt = new JFormattedTextField(formatter);
+            txt.setColumns(15);
+            txt.setFont(font);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return txt;
+    }
+
     private JButton createButton(String text) {
         JButton btn = new JButton(text);
         btn.setBackground(Cores.COR_RODAPE);
@@ -148,20 +170,100 @@ public class TelaCadastroPacientes extends JFrame {
 
 
     private void salvar() {
-        Paciente paciente = new Paciente();
+        // Validar campos obrigatórios
+        if (!validarCampos()) {
+            return;
+        }
 
-        paciente.setNomeCompleto(txtNome.getText());
-        paciente.setCpf(txtCPF.getText());
+        try {
+            Paciente paciente = new Paciente();
 
-        System.out.println(txtDataNasc.getText());
-        paciente.setDataNascimento(LocalDate.parse(txtDataNasc.getText(), DateTimeFormatter.DATE_TIME_FORMATTER));
-        paciente.setCartaoSUS(txtCartaoSUS.getText());
-        paciente.setNomeMae(txtNomeMae.getText());
-        paciente.setDataEntrada(LocalDate.parse(txtDataEntrada.getText(), DateTimeFormatter.DATE_TIME_FORMATTER));
+            paciente.setNomeCompleto(txtNome.getText());
+            
+            // Remover formatação do CPF (pontos e traço)
+            String cpfLimpo = txtCPF.getText().replaceAll("[^0-9]", "");
+            paciente.setCpf(cpfLimpo);
 
-        pacienteService.salvarPaciente(paciente);
+            // Converter data de nascimento de DD/MM/AAAA para LocalDate
+            String dataNascStr = txtDataNasc.getText();
+            LocalDate dataNasc = converterData(dataNascStr);
+            paciente.setDataNascimento(dataNasc);
 
-        JOptionPane.showMessageDialog(this, "Paciente salvo com sucesso!");
+            // Validar que Cartão SUS é numérico
+            String cartaoSUS = txtCartaoSUS.getText().trim();
+            if (!cartaoSUS.matches("\\d+")) {
+                JOptionPane.showMessageDialog(this, "Cartão SUS deve conter apenas números!", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            paciente.setCartaoSUS(cartaoSUS);
+
+            paciente.setNomeMae(txtNomeMae.getText());
+
+            // Converter data de entrada de DD/MM/AAAA para LocalDate
+            String dataEntradaStr = txtDataEntrada.getText();
+            LocalDate dataEntrada = converterData(dataEntradaStr);
+            paciente.setDataEntrada(dataEntrada);
+
+            pacienteService.salvarPaciente(paciente);
+
+            // Atualizar a tabela de pacientes após salvar
+            telaPacientes.atualizarTabela();
+
+            JOptionPane.showMessageDialog(this, "Paciente salvo com sucesso!");
+            
+            // Limpar os campos após salvar
+            limparCampos();
+            
+        } catch (DateTimeParseException e) {
+            JOptionPane.showMessageDialog(this, "Erro ao converter data. Verifique o formato DD/MM/AAAA", "Erro", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Erro ao salvar paciente: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // Método para validar campos obrigatórios
+    private boolean validarCampos() {
+        // Validar nome completo
+        if (txtNome.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Nome completo é obrigatório!", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        // Validar CPF (deve ter 11 dígitos)
+        String cpf = txtCPF.getText().replaceAll("[^0-9]", "");
+        if (cpf.length() != 11) {
+            JOptionPane.showMessageDialog(this, "CPF deve conter 11 dígitos!", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        // Validar data de nascimento
+        if (txtDataNasc.getText().contains("_")) {
+            JOptionPane.showMessageDialog(this, "Data de nascimento é obrigatória!", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        // Validar Cartão SUS
+        if (txtCartaoSUS.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Cartão SUS é obrigatório!", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        // Validar data de entrada
+        if (txtDataEntrada.getText().contains("_")) {
+            JOptionPane.showMessageDialog(this, "Data de entrada é obrigatória!", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        return true;
+    }
+
+    // Método para converter data de DD/MM/AAAA para LocalDate
+    private LocalDate converterData(String dataStr) {
+        String[] partes = dataStr.split("/");
+        int dia = Integer.parseInt(partes[0]);
+        int mes = Integer.parseInt(partes[1]);
+        int ano = Integer.parseInt(partes[2]);
+        return LocalDate.of(ano, mes, dia);
     }
 
     private void limparCampos() {
@@ -172,6 +274,11 @@ public class TelaCadastroPacientes extends JFrame {
         txtNomeMae.setText("");
         txtDataEntrada.setText("");
         //comboSituacao.setSelectedIndex(0);
+    }
+
+    // Método público para limpar campos ao abrir a tela
+    public void limparCamposAoAbrir() {
+        limparCampos();
     }
 
     private void cancelar() {
