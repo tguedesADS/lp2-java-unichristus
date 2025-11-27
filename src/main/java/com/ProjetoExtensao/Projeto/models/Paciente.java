@@ -39,6 +39,9 @@ public class Paciente {
     @Column(nullable = false)
     private LocalDate dataEntrada;
 
+    @Column(nullable = false)
+    private Boolean ativo = true; // Por padrão, paciente é ativo
+
     @OneToMany(mappedBy = "paciente")
     private List<Consulta> consultas;
 
@@ -49,6 +52,7 @@ public class Paciente {
         this.nomeMae = nomeMae;
         this.cartaoSUS = cartaoSUS;
         this.dataEntrada = dataEntrada;
+        this.ativo = true; // Por padrão, paciente é ativo
     }
 
     public void addConsulta(Consulta consulta) {

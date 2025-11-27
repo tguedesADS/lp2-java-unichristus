@@ -27,6 +27,9 @@ public class TelaCadastroPacientes extends JFrame {
 
     private JTextField txtNome, txtCartaoSUS, txtNomeMae;
     private JFormattedTextField txtCPF, txtDataNasc, txtDataEntrada;
+    private JCheckBox chkInativo;
+    
+    private Paciente pacienteEmEdicao = null; // Paciente sendo editado (null = novo cadastro)
 
     @PostConstruct
     public void initUI() {
@@ -109,6 +112,16 @@ public class TelaCadastroPacientes extends JFrame {
         txtDataEntrada = createFormattedTextField("##/##/####", fonteCampo);
         panelMain.add(txtDataEntrada, grid);
 
+        // Checkbox Paciente Inativo
+        grid.gridx = 0;
+        grid.gridy++;
+        grid.gridwidth = 2;
+        chkInativo = new JCheckBox("Paciente Inativo");
+        chkInativo.setFont(fonteLabel);
+        chkInativo.setBackground(Cores.COR_FUNDO_CLARO);
+        panelMain.add(chkInativo, grid);
+        grid.gridwidth = 1;
+
         // Botões
         grid.gridx = 1;
         grid.gridy++;
@@ -176,7 +189,14 @@ public class TelaCadastroPacientes extends JFrame {
         }
 
         try {
-            Paciente paciente = new Paciente();
+            Paciente paciente;
+            
+            // Verificar se é edição ou novo cadastro
+            if (pacienteEmEdicao != null) {
+                paciente = pacienteEmEdicao; // Edição
+            } else {
+                paciente = new Paciente(); // Novo cadastro
+            }
 
             paciente.setNomeCompleto(txtNome.getText());
             
@@ -204,15 +224,27 @@ public class TelaCadastroPacientes extends JFrame {
             LocalDate dataEntrada = converterData(dataEntradaStr);
             paciente.setDataEntrada(dataEntrada);
 
+            // Definir status ativo/inativo
+            paciente.setAtivo(!chkInativo.isSelected());
+
             pacienteService.salvarPaciente(paciente);
 
             // Atualizar a tabela de pacientes após salvar
             telaPacientes.atualizarTabela();
 
-            JOptionPane.showMessageDialog(this, "Paciente salvo com sucesso!");
+            // Exibir mensagem amigável
+            String mensagem = (pacienteEmEdicao != null) 
+                ? "✓ Paciente atualizado com sucesso!\n\nOs dados foram salvos no sistema." 
+                : "✓ Paciente cadastrado com sucesso!\n\nO paciente foi adicionado ao sistema.";
             
-            // Limpar os campos após salvar
+            JOptionPane.showMessageDialog(this, mensagem, "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+            
+            // Limpar os campos e fechar a tela
             limparCampos();
+            pacienteEmEdicao = null;
+            
+            // Fechar a janela e retornar para a página anterior
+            dispose();
             
         } catch (DateTimeParseException e) {
             JOptionPane.showMessageDialog(this, "Erro ao converter data. Verifique o formato DD/MM/AAAA", "Erro", JOptionPane.ERROR_MESSAGE);
@@ -273,6 +305,8 @@ public class TelaCadastroPacientes extends JFrame {
         txtDataNasc.setText("");
         txtNomeMae.setText("");
         txtDataEntrada.setText("");
+        chkInativo.setSelected(false);
+        pacienteEmEdicao = null;
         //comboSituacao.setSelectedIndex(0);
     }
 
@@ -281,7 +315,46 @@ public class TelaCadastroPacientes extends JFrame {
         limparCampos();
     }
 
+    // Método para carregar dados de um paciente para edição
+    public void carregarPacienteParaEdicao(Long pacienteId) {
+        try {
+            pacienteEmEdicao = pacienteService.findPacienteById(pacienteId);
+            
+            // Preencher os campos com os dados do paciente
+            txtNome.setText(pacienteEmEdicao.getNomeCompleto());
+            
+            // Formatar CPF para exibição
+            String cpf = pacienteEmEdicao.getCpf();
+            String cpfFormatado = cpf.substring(0, 3) + "." + cpf.substring(3, 6) + "." + cpf.substring(6, 9) + "-" + cpf.substring(9, 11);
+            txtCPF.setText(cpfFormatado);
+            
+            // Formatar data de nascimento para DD/MM/AAAA
+            LocalDate dataNasc = pacienteEmEdicao.getDataNascimento();
+            String dataNascFormatada = String.format("%02d/%02d/%04d", dataNasc.getDayOfMonth(), dataNasc.getMonthValue(), dataNasc.getYear());
+            txtDataNasc.setText(dataNascFormatada);
+            
+            txtCartaoSUS.setText(pacienteEmEdicao.getCartaoSUS());
+            txtNomeMae.setText(pacienteEmEdicao.getNomeMae());
+            
+            // Formatar data de entrada para DD/MM/AAAA
+            LocalDate dataEntrada = pacienteEmEdicao.getDataEntrada();
+            String dataEntradaFormatada = String.format("%02d/%02d/%04d", dataEntrada.getDayOfMonth(), dataEntrada.getMonthValue(), dataEntrada.getYear());
+            txtDataEntrada.setText(dataEntradaFormatada);
+            
+            // Marcar checkbox se paciente estiver inativo
+            chkInativo.setSelected(!pacienteEmEdicao.getAtivo());
+            
+            // Alterar título da janela
+            setTitle("Editar Paciente");
+            
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Erro ao carregar paciente: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private void cancelar() {
+        limparCampos();
+        setTitle("Cadastro de Pacientes");
         dispose();
     }
 }

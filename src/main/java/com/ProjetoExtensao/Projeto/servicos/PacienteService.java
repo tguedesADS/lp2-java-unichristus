@@ -31,4 +31,19 @@ public class PacienteService {
     public Paciente findPacienteByCpf(String cpf) {
         return pacienteRepositorio.findByCpf(cpf).orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
     }
+
+    // Buscar pacientes por status (ativo/inativo)
+    public List<Paciente> findPacientesByAtivo(Boolean ativo) {
+        return pacienteRepositorio.findByAtivo(ativo);
+    }
+
+    // Buscar paciente por ID
+    public Paciente findPacienteById(Long id) {
+        return pacienteRepositorio.findById(id).orElseThrow(() -> new RuntimeException("Paciente não encontrado"));
+    }
+
+    // Atualizar paciente
+    public void atualizarPaciente(Paciente paciente) {
+        pacienteRepositorio.save(paciente);
+    }
 }

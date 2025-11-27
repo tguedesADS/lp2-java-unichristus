@@ -57,4 +57,9 @@ public class NavigationService {
     public void abrirTelaAgendamentoConsultas() {
         telaAgendamentoConsulta.setVisible(true);
     }
+
+    public void abrirTelaEdicaoPaciente(Long pacienteId) {
+        telaCadastroPacientes.carregarPacienteParaEdicao(pacienteId);
+        telaCadastroPacientes.setVisible(true);
+    }
 }

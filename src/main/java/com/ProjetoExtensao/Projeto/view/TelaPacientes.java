@@ -115,18 +115,43 @@ public class TelaPacientes extends JFrame {
         estilizarBotao(btnPesquisar);
         linhaFiltros2.add(btnPesquisar);
 
-        // LISTENER
         btnPesquisar.addActionListener(e -> {
             String nome = campoNome.getText();
             String cpf = campoCpf.getText();
             List<Paciente> pacienteList;
 
-            if (!nome.isEmpty()) {
-                pacienteList = pacienteService.findPacientesByNomeCompleto(nome);
-            } else if (!cpf.isEmpty()) {
-                pacienteList = pacienteService.findPacientesByCpf(cpf);
+            // Verificar qual filtro de status está selecionado
+            if (rbAtivos.isSelected()) {
+                // Buscar apenas pacientes ativos
+                if (!nome.isEmpty()) {
+                    pacienteList = pacienteService.findPacientesByNomeCompleto(nome);
+                    pacienteList = pacienteList.stream().filter(Paciente::getAtivo).toList();
+                } else if (!cpf.isEmpty()) {
+                    pacienteList = pacienteService.findPacientesByCpf(cpf);
+                    pacienteList = pacienteList.stream().filter(Paciente::getAtivo).toList();
+                } else {
+                    pacienteList = pacienteService.findPacientesByAtivo(true);
+                }
+            } else if (rbInativos.isSelected()) {
+                // Buscar apenas pacientes inativos
+                if (!nome.isEmpty()) {
+                    pacienteList = pacienteService.findPacientesByNomeCompleto(nome);
+                    pacienteList = pacienteList.stream().filter(p -> !p.getAtivo()).toList();
+                } else if (!cpf.isEmpty()) {
+                    pacienteList = pacienteService.findPacientesByCpf(cpf);
+                    pacienteList = pacienteList.stream().filter(p -> !p.getAtivo()).toList();
+                } else {
+                    pacienteList = pacienteService.findPacientesByAtivo(false);
+                }
             } else {
-                pacienteList = pacienteService.findAllPacientes();
+                // Buscar todos
+                if (!nome.isEmpty()) {
+                    pacienteList = pacienteService.findPacientesByNomeCompleto(nome);
+                } else if (!cpf.isEmpty()) {
+                    pacienteList = pacienteService.findPacientesByCpf(cpf);
+                } else {
+                    pacienteList = pacienteService.findAllPacientes();
+                }
             }
 
             preencherTabela(pacienteList);
@@ -140,7 +165,7 @@ public class TelaPacientes extends JFrame {
         painelCentral.add(Box.createVerticalStrut(20));
 
         // Tabela de pacientes
-        String[] colunas = {"Nome", "CPF", "Data de nascimento", "Cartão SUS", "Data de entrada", "Nome da mãe"};
+        String[] colunas = {"ID", "Nome", "CPF", "Data de nascimento", "Cartão SUS", "Data de entrada", "Nome da mãe", "Situação"};
         modeloTabela = new DefaultTableModel(colunas, 0) {
             // Desabilitar edição das células da tabela
             @Override
@@ -150,6 +175,26 @@ public class TelaPacientes extends JFrame {
         };
         tabelaPacientes = new JTable(modeloTabela);
         tabelaPacientes.setRowHeight(25);
+        
+        // Ocultar a coluna ID (mas manter os dados)
+        tabelaPacientes.getColumnModel().getColumn(0).setMinWidth(0);
+        tabelaPacientes.getColumnModel().getColumn(0).setMaxWidth(0);
+        tabelaPacientes.getColumnModel().getColumn(0).setWidth(0);
+        
+        // Adicionar listener para duplo clique na tabela
+        tabelaPacientes.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                if (evt.getClickCount() == 2) {
+                    int row = tabelaPacientes.getSelectedRow();
+                    if (row != -1) {
+                        // Pegar o ID do paciente (coluna oculta)
+                        Long pacienteId = Long.parseLong(modeloTabela.getValueAt(row, 0).toString());
+                        navigationService.abrirTelaEdicaoPaciente(pacienteId);
+                    }
+                }
+            }
+        });
         
         // Adicionar scroll vertical e horizontal na tabela
         JScrollPane scroll = new JScrollPane(tabelaPacientes);
@@ -208,12 +253,14 @@ public class TelaPacientes extends JFrame {
 
         for (Paciente paciente : pacienteList) {
             Vector<String> linha = new Vector<>();
+            linha.add(paciente.getId().toString()); // ID (coluna oculta)
             linha.add(paciente.getNomeCompleto());
             linha.add(paciente.getCpf());
             linha.add(paciente.getDataNascimento().format(DateTimeFormatter.DATE_TIME_FORMATTER));
             linha.add(paciente.getCartaoSUS());
             linha.add(paciente.getDataEntrada().format(DateTimeFormatter.DATE_TIME_FORMATTER));
             linha.add(paciente.getNomeMae());
+            linha.add(paciente.getAtivo() ? "Ativo" : "Inativo");
 
             modeloTabela.addRow(linha);
         }
