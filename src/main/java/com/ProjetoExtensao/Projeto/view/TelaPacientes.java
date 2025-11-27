@@ -65,9 +65,9 @@ public class TelaPacientes extends JFrame {
         painelLabel.add(lblTitulo);
 
         // BOTAO ADICIONAR
-        JButton btnAdicionar = new JButton("Adicionar novo");
+        JButton btnAdicionar = new JButton("Adicionar paciente");
         estilizarBotao(btnAdicionar);
-        btnAdicionar.setPreferredSize(new Dimension(160, 40));
+        btnAdicionar.setPreferredSize(new Dimension(180, 40));
         btnAdicionar.addActionListener(e -> navigationService.abrirTelaCadastroPacientes());
 
         JPanel painelBotao = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
@@ -141,10 +141,21 @@ public class TelaPacientes extends JFrame {
 
         // Tabela de pacientes
         String[] colunas = {"Nome", "CPF", "Data de nascimento", "Cartão SUS", "Data de entrada", "Nome da mãe"};
-        modeloTabela = new DefaultTableModel(colunas, 0);
+        modeloTabela = new DefaultTableModel(colunas, 0) {
+            // Desabilitar edição das células da tabela
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
         tabelaPacientes = new JTable(modeloTabela);
         tabelaPacientes.setRowHeight(25);
+        
+        // Adicionar scroll vertical e horizontal na tabela
         JScrollPane scroll = new JScrollPane(tabelaPacientes);
+        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scroll.setPreferredSize(new Dimension(800, 400));
 
         painelCentral.add(scroll);
         painelPrincipal.add(painelCentral, BorderLayout.CENTER);
@@ -206,5 +217,11 @@ public class TelaPacientes extends JFrame {
 
             modeloTabela.addRow(linha);
         }
+    }
+
+    // Método para atualizar a tabela com os dados mais recentes
+    public void atualizarTabela() {
+        pacientes = pacienteService.findAllPacientes();
+        preencherTabela(pacientes);
     }
 }
