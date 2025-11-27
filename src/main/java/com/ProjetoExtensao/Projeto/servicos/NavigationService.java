@@ -46,6 +46,7 @@ public class NavigationService {
     }
 
     public void abrirTelaCadastroPacientes() {
+        telaCadastroPacientes.limparCamposAoAbrir();
         telaCadastroPacientes.setVisible(true);
     }
 
