@@ -169,7 +169,7 @@ public class TelaConsultas extends JFrame {
         contentPanel.add(pesquisaPanel);
         contentPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // SEÇÃO "Detalhes da Consulta"
+        // SEÇÃO "Detalhes da Consulta" com Scroll
         JPanel detalhesPanel = new JPanel();
         detalhesPanel.setLayout(new GridBagLayout());
         detalhesPanel.setBackground(Color.WHITE);
@@ -376,7 +376,15 @@ public class TelaConsultas extends JFrame {
         medicacaoArea.setBorder(BorderFactory.createLineBorder(borderColor));
         detalhesPanel.add(medicacaoArea, gbc);
 
-        contentPanel.add(detalhesPanel);
+        // Adicionar scroll ao painel de detalhes
+        JScrollPane scrollPane = new JScrollPane(detalhesPanel);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setPreferredSize(new Dimension(800, 400));
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        contentPanel.add(scrollPane);
 
         // Ação do botão Atualizar
         if (refreshButton != null) {

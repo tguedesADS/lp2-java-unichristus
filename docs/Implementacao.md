@@ -203,3 +203,32 @@
 - Após clicar em "OK", a janela fecha automaticamente
 - O usuário volta para a tela de consulta de pacientes
 - A tabela já mostra os dados atualizados
+
+
+---
+
+## Data: 27/11/2025
+
+### Adicionado Scroll na Tela de Consultas
+
+#### Alterações realizadas:
+
+1. **Implementado scroll vertical e horizontal**
+   - Adicionado `JScrollPane` envolvendo o painel de detalhes da consulta
+   - Scroll vertical sempre visível para facilitar navegação
+   - Scroll horizontal aparece quando necessário
+   - Definido tamanho preferencial de 800x400 pixels para a área de scroll
+
+2. **Melhor visualização de conteúdo extenso**
+   - Campos de texto grandes (Triagem e Anotações do Médico) agora são totalmente acessíveis
+   - Usuário pode rolar para ver todo o conteúdo sem redimensionar a janela
+   - Mantida a arquitetura e estrutura visual da tela
+
+#### Arquivos modificados:
+- `TelaConsultas.java` - Adicionado JScrollPane ao painel de detalhes
+
+#### Como funciona:
+- O painel "Detalhes da Consulta" agora possui scroll vertical sempre visível
+- Quando o conteúdo é maior que a área visível, o usuário pode rolar para baixo
+- O scroll horizontal aparece automaticamente se necessário
+- A experiência de navegação é mais fluida e intuitiva
