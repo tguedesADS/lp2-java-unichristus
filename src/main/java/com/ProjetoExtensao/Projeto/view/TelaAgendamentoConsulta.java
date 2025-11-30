@@ -127,7 +127,7 @@ public class TelaAgendamentoConsulta extends JFrame {
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.WEST;
         gbc.insets = new Insets(0, 0, 5, 0);
-        JLabel nomeLabel = new JLabel("Cpf do Paciente");
+        JLabel nomeLabel = new JLabel("CPF do Paciente");
         nomeLabel.setFont(new Font("Arial", Font.BOLD, 20));
         nomeLabel.setForeground(azulEscuro);
         formPanel.add(nomeLabel, gbc);
@@ -137,8 +137,8 @@ public class TelaAgendamentoConsulta extends JFrame {
         cpfField = new JTextField();
         cpfField.setFont(new Font("Arial", Font.PLAIN, 18));
         cpfField.setForeground(azulEscuro);
-        cpfField.setToolTipText("Digite o cpf do paciente");
-        addPlaceholder(cpfField, "Digite o cpf do paciente");
+        cpfField.setToolTipText("Digite o CPF do Paciente");
+        addPlaceholder(cpfField, "Digite o CPF do Paciente");
         formPanel.add(cpfField, gbc);
 
         // Reset gridwidth for subsequent rows, keep weightx
@@ -247,7 +247,7 @@ public class TelaAgendamentoConsulta extends JFrame {
                 if (cpfField != null) {
                     cpfField.setText("");
                     for (FocusListener fl : cpfField.getFocusListeners()) cpfField.removeFocusListener(fl);
-                    addPlaceholder(cpfField, "Digite o cpf do paciente");
+                    addPlaceholder(cpfField, "Digite o CPF do Paciente");
                 }
                 if (dataField != null) {
                     dataField.setText("");

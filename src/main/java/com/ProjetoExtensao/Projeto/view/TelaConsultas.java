@@ -15,6 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
@@ -58,6 +62,14 @@ public class TelaConsultas extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(true);
         setLayout(new BorderLayout());
+        
+        // Adicionar listener para limpar campos quando a tela ficar visível
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent e) {
+                limparCamposPesquisa();
+            }
+        });
 
         Color azulEscuro = Cores.COR_RODAPE;
         Color cinzaTitulo = Cores.COR_LETRA_PAINEL;
@@ -141,7 +153,7 @@ public class TelaConsultas extends JFrame {
         gbc.gridwidth = 1;
         gbc.weightx = 0.5;
 
-        JLabel pacientePesquisaLabel = new JLabel("Cpf do Paciente");
+        JLabel pacientePesquisaLabel = new JLabel("CPF do Paciente");
         pacientePesquisaLabel.setFont(new Font("Arial", Font.BOLD, 14));
         pacientePesquisaLabel.setBackground(Cores.COR_FUNDO_CLARO);
         pacientePesquisaLabel.setForeground(azulEscuro);
@@ -152,7 +164,11 @@ public class TelaConsultas extends JFrame {
         pacientCpfField = new JTextField();
         pacientCpfField.setFont(new Font("Arial", Font.PLAIN, 16));
         pacientCpfField.setForeground(azulEscuro);
-        addPlaceholder(pacientCpfField, "Cpf do paciente");
+        
+        // Adicionar formatação automática de CPF
+        aplicarFormatacaoCPF(pacientCpfField);
+        
+        addPlaceholder(pacientCpfField, "CPF do Paciente");
         pesquisaPanel.add(pacientCpfField, gbc);
 
         gbc.gridx = 2; // Coluna 3
@@ -392,7 +408,7 @@ public class TelaConsultas extends JFrame {
                 limparCamposDetalhes();
                 pacientCpfField.setText("");
 
-                addPlaceholder(pacientCpfField, "Cpf do paciente");
+                addPlaceholder(pacientCpfField, "CPF do Paciente");
                 pesquisaPanel.setBackground(new Color(0xE3E0E0));
             });
         }
@@ -401,15 +417,32 @@ public class TelaConsultas extends JFrame {
         pesquisarBtn.addActionListener(e -> {
             String pacienteCpf = pacientCpfField.getText();
 
-            Consulta consulta;
-
-            if (!pacienteCpf.isEmpty()) {
-                consulta = consultaService.findConsultaByPaciente(pacienteService.findPacienteByCpf(pacienteCpf));
-            } else {
-                consulta = null;
+            if (pacienteCpf.isEmpty() || pacienteCpf.equals("CPF do Paciente")) {
+                JOptionPane.showMessageDialog(this, "Por favor, digite um CPF para pesquisar.", "Aviso", JOptionPane.WARNING_MESSAGE);
+                return;
             }
 
-            atualizarDadosConsulta(consulta);
+            try {
+                // Remover formatação do CPF antes de buscar
+                String cpfLimpo = pacienteCpf.replaceAll("[^0-9]", "");
+                
+                if (cpfLimpo.length() != 11) {
+                    JOptionPane.showMessageDialog(this, "CPF inválido. Digite um CPF com 11 dígitos.", "Erro", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                Consulta consulta = consultaService.findConsultaByPaciente(pacienteService.findPacienteByCpf(cpfLimpo));
+                
+                if (consulta != null) {
+                    atualizarDadosConsulta(consulta);
+                } else {
+                    limparCamposDetalhes();
+                    JOptionPane.showMessageDialog(this, "Nenhuma consulta encontrada para este paciente.", "Aviso", JOptionPane.WARNING_MESSAGE);
+                }
+            } catch (RuntimeException ex) {
+                limparCamposDetalhes();
+                JOptionPane.showMessageDialog(this, "Não existe paciente vinculado ao CPF digitado.", "Aviso", JOptionPane.WARNING_MESSAGE);
+            }
         });
     }
 
@@ -475,5 +508,77 @@ public class TelaConsultas extends JFrame {
                 }
             }
         });
+    }
+
+    // Método para aplicar formatação automática de CPF
+    private void aplicarFormatacaoCPF(JTextField textField) {
+        AbstractDocument doc = (AbstractDocument) textField.getDocument();
+        doc.setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
+                String newStr = string.replaceAll("[^0-9]", ""); // Aceita apenas números
+                if (newStr.isEmpty()) return;
+                
+                String currentText = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String textSemFormatacao = currentText.replaceAll("[^0-9]", "");
+                
+                if (textSemFormatacao.length() + newStr.length() <= 11) {
+                    super.insertString(fb, offset, newStr, attr);
+                    formatarCPFNoTexto(fb);
+                }
+            }
+
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+                String newStr = text.replaceAll("[^0-9]", ""); // Aceita apenas números
+                
+                String currentText = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String textSemFormatacao = currentText.replaceAll("[^0-9]", "");
+                
+                // Calcular quantos dígitos serão removidos
+                String textoRemovido = currentText.substring(offset, Math.min(offset + length, currentText.length()));
+                int digitosRemovidos = textoRemovido.replaceAll("[^0-9]", "").length();
+                
+                if (textSemFormatacao.length() - digitosRemovidos + newStr.length() <= 11) {
+                    super.replace(fb, offset, length, newStr, attrs);
+                    formatarCPFNoTexto(fb);
+                }
+            }
+
+            @Override
+            public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+                super.remove(fb, offset, length);
+                formatarCPFNoTexto(fb);
+            }
+
+            private void formatarCPFNoTexto(FilterBypass fb) throws BadLocationException {
+                String text = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String apenasNumeros = text.replaceAll("[^0-9]", "");
+                
+                StringBuilder formatted = new StringBuilder();
+                for (int i = 0; i < apenasNumeros.length(); i++) {
+                    if (i == 3 || i == 6) {
+                        formatted.append(".");
+                    } else if (i == 9) {
+                        formatted.append("-");
+                    }
+                    formatted.append(apenasNumeros.charAt(i));
+                }
+                
+                if (!text.equals(formatted.toString())) {
+                    fb.remove(0, fb.getDocument().getLength());
+                    fb.insertString(0, formatted.toString(), null);
+                }
+            }
+        });
+    }
+
+    // Método para limpar campos de pesquisa ao abrir a tela
+    private void limparCamposPesquisa() {
+        if (pacientCpfField != null) {
+            pacientCpfField.setText("");
+            addPlaceholder(pacientCpfField, "CPF do Paciente");
+        }
+        limparCamposDetalhes();
     }
 }

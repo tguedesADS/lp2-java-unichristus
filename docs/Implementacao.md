@@ -1,6 +1,6 @@
 # Registro de Implementações
 
-## Data: 27/11/2024
+## Data: 27/11/2025
 
 ### Refatoração da Tela de Pacientes
 
@@ -40,7 +40,7 @@
 
 ---
 
-## Data: 27/11/2024 - Parte 2
+## Data: 27/11/2025 - Parte 2
 
 ### Validações e Formatações no Cadastro de Pacientes
 
@@ -102,7 +102,7 @@
 
 ---
 
-## Data: 27/11/2024 - Parte 3
+## Data: 27/11/2025 - Parte 3
 
 ### Implementação de Edição de Pacientes e Status Ativo/Inativo
 
@@ -179,7 +179,7 @@
 
 ---
 
-## Data: 27/11/2024 - Parte 4
+## Data: 27/11/2025 - Parte 4
 
 ### Melhorias na Experiência do Usuário ao Salvar/Editar Paciente
 
@@ -232,3 +232,71 @@
 - Quando o conteúdo é maior que a área visível, o usuário pode rolar para baixo
 - O scroll horizontal aparece automaticamente se necessário
 - A experiência de navegação é mais fluida e intuitiva
+
+
+---
+
+## Data: 30/11/2025 - Parte 1
+
+### Formatação Automática do Campo CPF na Tela de Consultas
+
+#### Alterações realizadas:
+
+1. **Formatação automática do CPF enquanto digita**
+   - Campo CPF aceita apenas números (0-9)
+   - Formatação aplicada automaticamente no padrão XXX.XXX.XXX-XX
+   - Limite de 11 dígitos numéricos
+   - Pontos e traços são inseridos automaticamente nas posições corretas
+
+2. **Validação de entrada**
+   - Bloqueia caracteres não numéricos
+   - Impede digitação além de 11 dígitos
+   - Mantém a formatação ao editar ou apagar caracteres
+
+3. **Validações completas na pesquisa**
+   - Valida se o campo está vazio antes de pesquisar
+   - Verifica se o CPF tem exatamente 11 dígitos
+   - Valida se não é o texto do placeholder
+   - Formatação é removida automaticamente antes de buscar no banco
+
+4. **Tratamento de erros robusto**
+   - Captura exceções quando paciente não existe no banco
+   - Limpa campos de detalhes antes de exibir mensagens de erro
+   - Mensagens específicas para cada tipo de erro:
+     - Campo vazio: "Por favor, digite um CPF para pesquisar."
+     - CPF incompleto: "CPF inválido. Digite um CPF com 11 dígitos."
+     - Paciente não encontrado: "Não existe paciente vinculado ao CPF digitado."
+     - Sem consultas: "Nenhuma consulta encontrada para este paciente."
+
+#### Arquivos modificados:
+- `TelaConsultas.java` - Adicionada formatação automática e melhorada a lógica de pesquisa
+
+#### Métodos criados:
+- `aplicarFormatacaoCPF(JTextField textField)` - Aplica formatação automática ao campo CPF usando DocumentFilter
+
+#### Como funciona:
+1. O usuário começa a digitar apenas números no campo "CPF do Paciente"
+2. A formatação é aplicada automaticamente:
+   - Após 3 dígitos: adiciona ponto (123.)
+   - Após 6 dígitos: adiciona ponto (123.456.)
+   - Após 9 dígitos: adiciona traço (123.456.789-)
+   - Resultado final: 123.456.789-00
+3. Ao clicar em "Pesquisar", o sistema valida o CPF
+4. Remove a formatação e busca no banco de dados
+5. Se encontrar, exibe os detalhes da consulta
+6. Se não encontrar, limpa os campos e exibe mensagem apropriada
+
+5. **Limpeza automática ao abrir a tela**
+   - Campo de pesquisa é limpo automaticamente quando a tela é aberta
+   - Placeholder é restaurado
+   - Campos de detalhes da consulta são limpos
+   - Garante que a tela sempre inicie em estado limpo
+
+#### Exemplo de uso:
+- Digite: "12345678900" (apenas números)
+- Campo exibe automaticamente: "123.456.789-00"
+- Clique em "Pesquisar"
+- Sistema valida, busca e exibe os dados da consulta
+- Se não encontrar, exibe mensagem de aviso clara
+- Ao sair e retornar para a tela, o campo estará limpo
+
