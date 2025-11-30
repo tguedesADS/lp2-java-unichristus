@@ -5,6 +5,7 @@ import com.ProjetoExtensao.Projeto.infra.DateTimeFormatter;
 import com.ProjetoExtensao.Projeto.infra.IconManager;
 import com.ProjetoExtensao.Projeto.infra.PanelsFactory;
 import com.ProjetoExtensao.Projeto.models.Consulta;
+import com.ProjetoExtensao.Projeto.models.Paciente;
 import com.ProjetoExtensao.Projeto.servicos.ConsultaService;
 import com.ProjetoExtensao.Projeto.servicos.NavigationService;
 import com.ProjetoExtensao.Projeto.servicos.PacienteService;
@@ -22,6 +23,8 @@ import javax.swing.text.DocumentFilter;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.util.List;
+import java.util.Vector;
 
 @org.springframework.stereotype.Component
 @NoArgsConstructor
@@ -43,8 +46,15 @@ public class TelaConsultas extends JFrame {
     private JTextField horaConsultaField;
     private JTextField pacienteDetalhesField;
     private JTextField especialidadeDetalhesField;
+    private JTextField diagnosticoField;
     private JTextArea triagemArea;
     private JTextArea medicacaoArea;
+
+    // Tabela de consultas
+    private JTable tabelaConsultas;
+    private javax.swing.table.DefaultTableModel modeloTabela;
+    private JPanel painelTabela;
+    private List<Consulta> consultasEncontradas;
 
     // Campos de pesquisa
     private JTextField pacientCpfField;
@@ -340,8 +350,29 @@ public class TelaConsultas extends JFrame {
         especialidadeDetalhesField.setBorder(BorderFactory.createLineBorder(borderColor));
         detalhesPanel.add(especialidadeDetalhesField, gbc);
 
-        // Linha 4: Triagem
+        // Linha 4: Diagnóstico
         gbc.gridy = 7;
+        gbc.gridx = 0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.weightx = 1.0;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(10, 0, 0, 0);
+        JLabel diagnosticoLabel = new JLabel("Diagnóstico:");
+        diagnosticoLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        diagnosticoLabel.setForeground(azulEscuro);
+        detalhesPanel.add(diagnosticoLabel, gbc);
+
+        gbc.gridy = 8;
+        gbc.insets = new Insets(0, 0, 20, 0);
+        diagnosticoField = new JTextField();
+        diagnosticoField.setFont(new Font("Arial", Font.PLAIN, 16));
+        diagnosticoField.setBackground(Color.WHITE);
+        diagnosticoField.setEditable(false);
+        diagnosticoField.setBorder(BorderFactory.createLineBorder(borderColor));
+        detalhesPanel.add(diagnosticoField, gbc);
+
+        // Linha 5: Triagem
+        gbc.gridy = 9;
         gbc.gridx = 0;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.weightx = 1.0;
@@ -352,12 +383,12 @@ public class TelaConsultas extends JFrame {
         triagemLabel.setForeground(azulEscuro);
         detalhesPanel.add(triagemLabel, gbc);
 
-        gbc.gridy = 8;
+        gbc.gridy = 10;
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(0, 0, 20, 0);
         gbc.gridwidth = GridBagConstraints.REMAINDER;
-        gbc.weighty = 1.0;
-        triagemArea = new JTextArea(10, 20);
+        gbc.weighty = 0.5;
+        triagemArea = new JTextArea(5, 20);
         triagemArea.setFont(new Font("Arial", Font.PLAIN, 16));
         triagemArea.setBackground(Color.WHITE);
         triagemArea.setLineWrap(true);
@@ -367,23 +398,24 @@ public class TelaConsultas extends JFrame {
         detalhesPanel.add(triagemArea, gbc);
 
         // Linha 6: Medicação
-        gbc.gridy = 9;
+        gbc.gridy = 11;
         gbc.gridx = 0;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.weightx = 1.0;
         gbc.anchor = GridBagConstraints.WEST;
         gbc.insets = new Insets(10, 0, 0, 0);
+        gbc.weighty = 0.0;
         JLabel medicacaoLabel = new JLabel("Anotações do Médico:");
         medicacaoLabel.setFont(new Font("Arial", Font.BOLD, 14));
         medicacaoLabel.setForeground(azulEscuro);
         detalhesPanel.add(medicacaoLabel, gbc);
 
-        gbc.gridy = 10;
+        gbc.gridy = 12;
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(0, 0, 20, 0);
         gbc.gridwidth = GridBagConstraints.REMAINDER;
-        gbc.weighty = 1.0;
-        medicacaoArea = new JTextArea(18, 20);
+        gbc.weighty = 0.5;
+        medicacaoArea = new JTextArea(5, 20);
         medicacaoArea.setFont(new Font("Arial", Font.PLAIN, 16));
         medicacaoArea.setBackground(Color.WHITE);
         medicacaoArea.setLineWrap(true);
@@ -431,17 +463,41 @@ public class TelaConsultas extends JFrame {
                     return;
                 }
                 
-                Consulta consulta = consultaService.findConsultaByPaciente(pacienteService.findPacienteByCpf(cpfLimpo));
-                
-                if (consulta != null) {
-                    atualizarDadosConsulta(consulta);
-                } else {
+                // Tentar buscar o paciente
+                Paciente paciente = null;
+                try {
+                    paciente = pacienteService.findPacienteByCpf(cpfLimpo);
+                } catch (RuntimeException ex) {
                     limparCamposDetalhes();
-                    JOptionPane.showMessageDialog(this, "Nenhuma consulta encontrada para este paciente.", "Aviso", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(this, 
+                        "Paciente não encontrado!\n\nCPF pesquisado: " + cpfLimpo + "\n\nVerifique se o paciente está cadastrado.", 
+                        "Paciente não encontrado", 
+                        JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                
+                // Buscar todas as consultas do paciente
+                consultasEncontradas = consultaService.findAllConsultasByPaciente(paciente);
+                
+                if (consultasEncontradas == null || consultasEncontradas.isEmpty()) {
+                    limparCamposDetalhes();
+                    JOptionPane.showMessageDialog(this, 
+                        "Paciente encontrado, mas não possui consultas cadastradas.\n\nPaciente: " + paciente.getNomeCompleto(), 
+                        "Sem consultas", 
+                        JOptionPane.INFORMATION_MESSAGE);
+                } else if (consultasEncontradas.size() == 1) {
+                    // Se tem apenas uma consulta, mostrar direto
+                    atualizarDadosConsulta(consultasEncontradas.get(0));
+                } else {
+                    // Se tem múltiplas consultas, mostrar lista para seleção
+                    mostrarListaConsultas(consultasEncontradas, paciente);
                 }
             } catch (RuntimeException ex) {
                 limparCamposDetalhes();
-                JOptionPane.showMessageDialog(this, "Não existe paciente vinculado ao CPF digitado.", "Aviso", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, 
+                    "Erro ao buscar consulta:\n" + ex.getMessage(), 
+                    "Erro", 
+                    JOptionPane.ERROR_MESSAGE);
             }
         });
     }
@@ -453,6 +509,17 @@ public class TelaConsultas extends JFrame {
         pacienteDetalhesField.setText(consulta.getPaciente().getNomeCompleto());
         medicoDetalhesField.setText(consulta.getResponsavelSaude().getNomeCompleto());
         especialidadeDetalhesField.setText(consulta.getTipoConsulta().toString());
+        
+        // Preencher campos de texto
+        if (triagemArea != null) {
+            triagemArea.setText(consulta.getMotivoConsulta() != null ? consulta.getMotivoConsulta() : "");
+        }
+        if (diagnosticoField != null) {
+            diagnosticoField.setText(consulta.getDiagnostico() != null ? consulta.getDiagnostico() : "");
+        }
+        if (medicacaoArea != null) {
+            medicacaoArea.setText(consulta.getAnotacoesMedico() != null ? consulta.getAnotacoesMedico() : "");
+        }
     }
 
     // Método para limpar os campos da seção Detalhes da Consulta
@@ -463,6 +530,7 @@ public class TelaConsultas extends JFrame {
         pacienteDetalhesField.setText("");
         medicoDetalhesField.setText("");
         especialidadeDetalhesField.setText("");
+        diagnosticoField.setText("");
         triagemArea.setText("");
         medicacaoArea.setText("");
 
@@ -473,6 +541,7 @@ public class TelaConsultas extends JFrame {
         if (pacienteDetalhesField != null) pacienteDetalhesField.setForeground(Cores.COR_RODAPE);
         if (medicoDetalhesField != null) medicoDetalhesField.setForeground(Cores.COR_RODAPE);
         if (especialidadeDetalhesField != null) especialidadeDetalhesField.setForeground(Cores.COR_RODAPE);
+        if (diagnosticoField != null) diagnosticoField.setForeground(Cores.COR_RODAPE);
         if (triagemArea != null) triagemArea.setForeground(Cores.COR_RODAPE);
         if (medicacaoArea != null) medicacaoArea.setForeground(Cores.COR_RODAPE);
 
@@ -580,5 +649,39 @@ public class TelaConsultas extends JFrame {
             addPlaceholder(pacientCpfField, "CPF do Paciente");
         }
         limparCamposDetalhes();
+    }
+
+    // Método para mostrar lista de consultas quando há múltiplas
+    private void mostrarListaConsultas(List<Consulta> consultas, Paciente paciente) {
+        String[] opcoes = new String[consultas.size()];
+        for (int i = 0; i < consultas.size(); i++) {
+            Consulta c = consultas.get(i);
+            opcoes[i] = String.format("Consulta %d - Dr(a). %s - %s - %s às %s", 
+                c.getId(),
+                c.getResponsavelSaude().getNomeCompleto(),
+                c.getTipoConsulta(),
+                c.getData().format(DateTimeFormatter.DATE_TIME_FORMATTER),
+                c.getHora());
+        }
+        
+        String escolha = (String) JOptionPane.showInputDialog(
+            this,
+            "Paciente: " + paciente.getNomeCompleto() + "\n\nEste paciente possui " + consultas.size() + " consultas.\nSelecione uma para ver os detalhes:",
+            "Selecionar Consulta",
+            JOptionPane.QUESTION_MESSAGE,
+            null,
+            opcoes,
+            opcoes[0]
+        );
+        
+        if (escolha != null) {
+            // Encontrar qual consulta foi selecionada
+            for (int i = 0; i < opcoes.length; i++) {
+                if (opcoes[i].equals(escolha)) {
+                    atualizarDadosConsulta(consultas.get(i));
+                    break;
+                }
+            }
+        }
     }
 }

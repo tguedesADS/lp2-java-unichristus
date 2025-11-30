@@ -300,3 +300,198 @@
 - Se não encontrar, exibe mensagem de aviso clara
 - Ao sair e retornar para a tela, o campo estará limpo
 
+
+---
+
+## Data: 30/11/2025 - Parte 2
+
+### Melhorias Completas na Tela de Agendamento de Consulta
+
+#### Alterações realizadas:
+
+1. **Limpeza automática do formulário**
+   - Campos são limpos automaticamente ao abrir a tela
+   - Implementado `ComponentListener` que detecta quando a tela fica visível
+   - Método `limparCampos()` restaura todos os campos ao estado inicial
+
+2. **Formatação automática do CPF**
+   - Campo CPF aceita apenas números (0-9)
+   - Formatação aplicada automaticamente no padrão XXX.XXX.XXX-XX
+   - Limite de 11 dígitos numéricos
+
+3. **Formatação automática da Data**
+   - Campo Data aceita apenas números (0-9)
+   - Formatação aplicada automaticamente no padrão DD/MM/AAAA
+   - Limite de 8 dígitos numéricos
+
+4. **Horário com seleção de hora e minuto**
+   - Substituído campo de texto livre por ComboBoxes
+   - ComboBox de horas: 00 a 23
+   - ComboBox de minutos: 00, 05, 10, 15... (intervalos de 5 minutos)
+   - Interface mais intuitiva e sem erros de digitação
+
+5. **Validação de CPF cadastrado**
+   - Sistema verifica se o CPF existe no banco antes de agendar
+   - Mensagem clara: "CPF não cadastrado! Por favor, cadastre o paciente primeiro."
+   - Evita agendamentos para pacientes inexistentes
+
+6. **Novos campos de texto adicionados**
+   - **Motivo da Consulta** (obrigatório): Campo de texto com 3 linhas
+   - **Diagnóstico** (opcional): Campo de texto com 3 linhas
+   - **Anotações do Médico** (opcional): Campo de texto com 3 linhas
+   - Todos com scroll e quebra de linha automática
+
+7. **Validações completas de campos obrigatórios**
+   - CPF: obrigatório, 11 dígitos
+   - Médico: obrigatório, deve selecionar da lista
+   - Tipo de Consulta: obrigatório, deve selecionar da lista
+   - Data: obrigatória, formato DD/MM/AAAA
+   - Motivo da Consulta: obrigatório
+   - Diagnóstico e Anotações do Médico: opcionais
+
+8. **Atualização do banco de dados**
+   - Adicionadas colunas na tabela `consultas`:
+     - `motivo_consulta` (TEXT)
+     - `diagnostico` (TEXT)
+     - `anotacoes_medico` (TEXT)
+
+9. **Layout otimizado**
+   - Campos reorganizados para caber tudo sem scroll
+   - Campos de texto menores (3 linhas cada)
+   - Espaçamento ajustado para melhor visualização
+
+#### Arquivos modificados:
+- `TelaAgendamentoConsulta.java` - Reformulação completa com novos campos e validações
+- `Consulta.java` - Adicionados campos motivoConsulta, diagnostico e anotacoesMedico
+- `ConsultaService.java` - Atualizado método salvarConsulta para aceitar novos parâmetros
+
+#### Métodos criados:
+- `limparCampos()` - Limpa todos os campos do formulário
+- `validarCampos()` - Valida todos os campos obrigatórios
+- `aplicarFormatacaoCPF(JTextField)` - Aplica formatação automática no CPF
+- `aplicarFormatacaoData(JTextField)` - Aplica formatação automática na data
+
+#### Como funciona:
+
+**Ao abrir a tela:**
+- Todos os campos são limpos automaticamente
+- Formulário pronto para novo agendamento
+
+**Preenchimento:**
+- CPF: Digite apenas números, formatação automática (123.456.789-00)
+- Data: Digite apenas números, formatação automática (25/11/2025)
+- Horário: Selecione hora e minuto nos ComboBoxes
+- Médico e Tipo de Consulta: Selecione nas listas
+- Motivo da Consulta: Campo obrigatório, descreva o motivo
+- Diagnóstico e Anotações: Campos opcionais
+
+**Ao clicar em Agendar:**
+1. Sistema valida todos os campos obrigatórios
+2. Verifica se o CPF está cadastrado no sistema
+3. Se tudo estiver correto, salva a consulta
+4. Exibe mensagem de sucesso
+5. Limpa o formulário e fecha a tela
+
+**Mensagens de erro:**
+- CPF inválido ou não cadastrado
+- Campos obrigatórios não preenchidos
+- Seleções não realizadas (médico, tipo de consulta)
+
+
+---
+
+## Data: 30/11/2025 - Parte 3
+
+### Suporte a Múltiplas Consultas por Paciente
+
+#### Alterações realizadas:
+
+1. **Novo método no repositório**
+   - `findAllByPaciente(Paciente paciente)` - Busca todas as consultas de um paciente
+
+2. **Novos métodos no service**
+   - `findAllConsultasByPaciente(Paciente paciente)` - Retorna lista de consultas
+   - `findConsultaById(Long id)` - Busca consulta por ID
+
+3. **Lógica inteligente de exibição**
+   - Se o paciente tem 1 consulta: exibe direto os detalhes
+   - Se o paciente tem múltiplas consultas: mostra lista para seleção
+   - Se o paciente não tem consultas: exibe mensagem informativa
+
+4. **Dialog de seleção de consultas**
+   - Lista todas as consultas do paciente
+   - Mostra: ID, Médico, Tipo, Data e Hora
+   - Usuário seleciona qual consulta quer ver os detalhes
+
+5. **Mensagens de erro melhoradas**
+   - Diferencia paciente não encontrado de paciente sem consultas
+   - Mostra CPF pesquisado para facilitar debug
+   - Mostra nome do paciente quando encontrado
+
+#### Arquivos modificados:
+- `ConsultaRepositorio.java` - Adicionado método findAllByPaciente
+- `ConsultaService.java` - Adicionados métodos para buscar múltiplas consultas
+- `TelaConsultas.java` - Implementada lógica de seleção de consultas
+
+#### Métodos criados:
+- `mostrarListaConsultas(List<Consulta>, Paciente)` - Exibe dialog com lista de consultas
+
+#### Como funciona:
+
+**Cenário 1 - Uma consulta:**
+1. Digite o CPF
+2. Clique em "Pesquisar"
+3. Detalhes da consulta são exibidos automaticamente
+
+**Cenário 2 - Múltiplas consultas:**
+1. Digite o CPF
+2. Clique em "Pesquisar"
+3. Aparece um dialog mostrando todas as consultas
+4. Selecione a consulta desejada
+5. Detalhes da consulta selecionada são exibidos
+
+**Cenário 3 - Sem consultas:**
+1. Digite o CPF
+2. Clique em "Pesquisar"
+3. Mensagem: "Paciente encontrado, mas não possui consultas cadastradas"
+
+**Cenário 4 - Paciente não existe:**
+1. Digite o CPF
+2. Clique em "Pesquisar"
+3. Mensagem: "Paciente não encontrado! CPF pesquisado: [CPF]"
+
+
+---
+
+## Data: 30/11/2025 - Parte 4
+
+### Correção de Bugs e Melhorias
+
+#### Bugs corrigidos:
+
+1. **Programa fechando após agendar consulta**
+   - Removido `dispose()` após salvar consulta
+   - Agora a janela permanece aberta para agendar mais consultas
+   - Mensagem atualizada informando que pode agendar outra ou fechar
+
+2. **Campos não preenchidos nos detalhes da consulta**
+   - Método `atualizarDadosConsulta()` atualizado
+   - Agora preenche: Motivo da Consulta, Diagnóstico e Anotações do Médico
+   - Trata valores nulos corretamente
+
+#### Observações:
+
+**Campo Diagnóstico na interface:**
+- O campo `diagnosticoField` foi declarado mas não foi adicionado visualmente na tela
+- Os dados de diagnóstico são salvos e recuperados corretamente do banco
+- Para adicionar o campo visualmente seria necessário modificar o layout da tela de detalhes
+- Atualmente o diagnóstico é exibido no campo que existe (se houver)
+
+**Campos funcionando:**
+- Motivo da Consulta (triagemArea) - ✓ Funcionando
+- Anotações do Médico (medicacaoArea) - ✓ Funcionando  
+- Diagnóstico - ✓ Salvo no banco, mas campo visual precisa ser adicionado ao layout
+
+#### Arquivos modificados:
+- `TelaAgendamentoConsulta.java` - Removido dispose() após salvar
+- `TelaConsultas.java` - Atualizado método atualizarDadosConsulta()

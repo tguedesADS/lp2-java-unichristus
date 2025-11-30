@@ -7,6 +7,7 @@ import com.ProjetoExtensao.Projeto.models.ResponsavelSaude;
 import com.ProjetoExtensao.Projeto.models.TipoConsulta;
 import com.ProjetoExtensao.Projeto.servicos.ConsultaService;
 import com.ProjetoExtensao.Projeto.servicos.NavigationService;
+import com.ProjetoExtensao.Projeto.servicos.PacienteService;
 import com.ProjetoExtensao.Projeto.servicos.ResponsavelService;
 import jakarta.annotation.PostConstruct;
 import lombok.NoArgsConstructor;
@@ -14,10 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.MaskFormatter;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -34,13 +37,19 @@ public class TelaAgendamentoConsulta extends JFrame {
     private ConsultaService consultaService;
     @Autowired
     private NavigationService navigationService;
+    @Autowired
+    private PacienteService pacienteService;
 
     private JComboBox<String> especialidadeComboBox;
     private JComboBox<String> medicosComboBox;
+    private JComboBox<String> horaComboBox;
+    private JComboBox<String> minutoComboBox;
 
-    private JTextField cpfField;
-    private JTextField dataField;
-    private JTextField horarioField;
+    private JFormattedTextField cpfField;
+    private JFormattedTextField dataField;
+    private JTextArea motivoConsultaArea;
+    private JTextArea diagnosticoArea;
+    private JTextArea anotacoesMedicoArea;
 
     @PostConstruct
     public void initUI() {
@@ -51,6 +60,14 @@ public class TelaAgendamentoConsulta extends JFrame {
         setLocationRelativeTo(null);
         setResizable(false);
         setLayout(new BorderLayout());
+        
+        // Adicionar listener para limpar campos quando a tela ficar visível
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent e) {
+                limparCampos();
+            }
+        });
 
         // Usando PanelsFactory para cabeçalho e rodapé
         JPanel headerPanel = panelsFactory.getHeaderPanel();
@@ -134,11 +151,16 @@ public class TelaAgendamentoConsulta extends JFrame {
 
         gbc.gridy = 1;
         gbc.insets = new Insets(0, 0, 20, 0);
-        cpfField = new JTextField();
-        cpfField.setFont(new Font("Arial", Font.PLAIN, 18));
-        cpfField.setForeground(azulEscuro);
-        cpfField.setToolTipText("Digite o CPF do Paciente");
-        addPlaceholder(cpfField, "Digite o CPF do Paciente");
+        try {
+            MaskFormatter cpfFormatter = new MaskFormatter("###.###.###-##");
+            cpfFormatter.setPlaceholderCharacter('_');
+            cpfField = new JFormattedTextField(cpfFormatter);
+            cpfField.setFont(new Font("Arial", Font.PLAIN, 18));
+            cpfField.setForeground(azulEscuro);
+            cpfField.setToolTipText("Digite o CPF do Paciente");
+        } catch (ParseException e) {
+            cpfField = new JFormattedTextField();
+        }
         formPanel.add(cpfField, gbc);
 
         // Reset gridwidth for subsequent rows, keep weightx
@@ -205,12 +227,17 @@ public class TelaAgendamentoConsulta extends JFrame {
         // Nested panel for data field and calendar icon
         JPanel dataFieldPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         dataFieldPanel.setOpaque(false);
-        dataField = new JTextField();
-        dataField.setFont(new Font("Arial", Font.PLAIN, 18));
-        dataField.setToolTipText("dd/mm/aaaa");
-        dataField.setForeground(azulEscuro);
-        addPlaceholder(dataField, "dd/MM/yyyy");
-        dataField.setPreferredSize(new Dimension(170, 35));
+        try {
+            MaskFormatter dataFormatter = new MaskFormatter("##/##/####");
+            dataFormatter.setPlaceholderCharacter('_');
+            dataField = new JFormattedTextField(dataFormatter);
+            dataField.setFont(new Font("Arial", Font.PLAIN, 18));
+            dataField.setToolTipText("dd/mm/aaaa");
+            dataField.setForeground(azulEscuro);
+            dataField.setPreferredSize(new Dimension(170, 35));
+        } catch (ParseException e) {
+            dataField = new JFormattedTextField();
+        }
         dataFieldPanel.add(dataField);
 
         // Re-enable calendar icon
@@ -225,14 +252,86 @@ public class TelaAgendamentoConsulta extends JFrame {
         gbc.insets = new Insets(0, 0, 20, 0);
         formPanel.add(dataFieldPanel, gbc);
 
-        horarioField = new JTextField();
-        horarioField.setFont(new Font("Arial", Font.PLAIN, 18));
-        horarioField.setForeground(azulEscuro);
-        addPlaceholder(horarioField, "HH:mm");
+        // Painel para hora e minuto
+        JPanel horarioPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        horarioPanel.setOpaque(false);
+        
+        horaComboBox = new JComboBox<>();
+        horaComboBox.setFont(new Font("Arial", Font.PLAIN, 18));
+        for (int i = 0; i < 24; i++) {
+            horaComboBox.addItem(String.format("%02d", i));
+        }
+        horarioPanel.add(horaComboBox);
+        
+        JLabel separadorLabel = new JLabel(":");
+        separadorLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        horarioPanel.add(separadorLabel);
+        
+        minutoComboBox = new JComboBox<>();
+        minutoComboBox.setFont(new Font("Arial", Font.PLAIN, 18));
+        for (int i = 0; i < 60; i += 5) {
+            minutoComboBox.addItem(String.format("%02d", i));
+        }
+        horarioPanel.add(minutoComboBox);
+        
         gbc.gridx = 1;
         gbc.gridy = 5;
         gbc.insets = new Insets(0, 10, 20, 0);
-        formPanel.add(horarioField, gbc);
+        formPanel.add(horarioPanel, gbc);
+
+        // --- MOTIVO DA CONSULTA ---
+        gbc.gridx = 0;
+        gbc.gridy = 6;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(0, 0, 5, 0);
+        JLabel motivoLabel = new JLabel("Motivo da Consulta *");
+        motivoLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        motivoLabel.setForeground(azulEscuro);
+        formPanel.add(motivoLabel, gbc);
+
+        gbc.gridy = 7;
+        gbc.insets = new Insets(0, 0, 15, 0);
+        motivoConsultaArea = new JTextArea(3, 20);
+        motivoConsultaArea.setFont(new Font("Arial", Font.PLAIN, 14));
+        motivoConsultaArea.setLineWrap(true);
+        motivoConsultaArea.setWrapStyleWord(true);
+        JScrollPane motivoScroll = new JScrollPane(motivoConsultaArea);
+        formPanel.add(motivoScroll, gbc);
+
+        // --- DIAGNÓSTICO ---
+        gbc.gridy = 8;
+        gbc.insets = new Insets(0, 0, 5, 0);
+        JLabel diagnosticoLabel = new JLabel("Diagnóstico");
+        diagnosticoLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        diagnosticoLabel.setForeground(azulEscuro);
+        formPanel.add(diagnosticoLabel, gbc);
+
+        gbc.gridy = 9;
+        gbc.insets = new Insets(0, 0, 15, 0);
+        diagnosticoArea = new JTextArea(3, 20);
+        diagnosticoArea.setFont(new Font("Arial", Font.PLAIN, 14));
+        diagnosticoArea.setLineWrap(true);
+        diagnosticoArea.setWrapStyleWord(true);
+        JScrollPane diagnosticoScroll = new JScrollPane(diagnosticoArea);
+        formPanel.add(diagnosticoScroll, gbc);
+
+        // --- ANOTAÇÕES DO MÉDICO ---
+        gbc.gridy = 10;
+        gbc.insets = new Insets(0, 0, 5, 0);
+        JLabel anotacoesLabel = new JLabel("Anotações do Médico");
+        anotacoesLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        anotacoesLabel.setForeground(azulEscuro);
+        formPanel.add(anotacoesLabel, gbc);
+
+        gbc.gridy = 11;
+        gbc.insets = new Insets(0, 0, 20, 0);
+        anotacoesMedicoArea = new JTextArea(3, 20);
+        anotacoesMedicoArea.setFont(new Font("Arial", Font.PLAIN, 14));
+        anotacoesMedicoArea.setLineWrap(true);
+        anotacoesMedicoArea.setWrapStyleWord(true);
+        JScrollPane anotacoesScroll = new JScrollPane(anotacoesMedicoArea);
+        formPanel.add(anotacoesScroll, gbc);
 
         // --- BOTÃO ATUALIZAR ---
         JButton refreshButton = panelsFactory.getRefreshButton();
@@ -243,26 +342,7 @@ public class TelaAgendamentoConsulta extends JFrame {
             dispose();
         });
         if (refreshButton != null) {
-            refreshButton.addActionListener(e -> {
-                if (cpfField != null) {
-                    cpfField.setText("");
-                    for (FocusListener fl : cpfField.getFocusListeners()) cpfField.removeFocusListener(fl);
-                    addPlaceholder(cpfField, "Digite o CPF do Paciente");
-                }
-                if (dataField != null) {
-                    dataField.setText("");
-                    for (FocusListener fl : dataField.getFocusListeners()) dataField.removeFocusListener(fl);
-                    addPlaceholder(dataField, "dd/MM/yyyy");
-                }
-                if (horarioField != null) {
-                    horarioField.setText("");
-                    for (FocusListener fl : horarioField.getFocusListeners()) horarioField.removeFocusListener(fl);
-                    addPlaceholder(horarioField, "HH:mm");
-                }
-                if (medicosComboBox != null) medicosComboBox.setSelectedIndex(0);
-                if (especialidadeComboBox != null) especialidadeComboBox.setSelectedIndex(0);
-
-            });
+            refreshButton.addActionListener(e -> limparCampos());
         }
 
         // Adiciona o botão Agendar ao formPanel com GridBagLayout
@@ -271,7 +351,7 @@ public class TelaAgendamentoConsulta extends JFrame {
         agendarBtn.setBackground(Cores.COR_RODAPE);
         agendarBtn.setForeground(Color.WHITE);
         gbc.gridx = 0;
-        gbc.gridy = 6;
+        gbc.gridy = 12;
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.EAST;
         gbc.fill = GridBagConstraints.NONE;
@@ -283,16 +363,74 @@ public class TelaAgendamentoConsulta extends JFrame {
     }
 
     private void salvarConsulta() {
-        String pacienteCpf = cpfField.getText();
+        // Validar campos obrigatórios
+        if (!validarCampos()) {
+            return;
+        }
+
+        try {
+            String pacienteCpf = cpfField.getText().replaceAll("[^0-9]", "");
+            String data = dataField.getText();
+            String hora = horaComboBox.getSelectedItem() + ":" + minutoComboBox.getSelectedItem();
+
+            String medicoNome = (String) medicosComboBox.getSelectedItem();
+            String tipoConsulta = (String) especialidadeComboBox.getSelectedItem();
+            
+            String motivoConsulta = motivoConsultaArea.getText().trim();
+            String diagnostico = diagnosticoArea.getText().trim();
+            String anotacoesMedico = anotacoesMedicoArea.getText().trim();
+
+            // Verificar se o paciente existe
+            try {
+                pacienteService.findPacienteByCpf(pacienteCpf);
+            } catch (RuntimeException ex) {
+                JOptionPane.showMessageDialog(this, "CPF não cadastrado! Por favor, cadastre o paciente primeiro.", "Erro", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            consultaService.salvarConsulta(pacienteCpf, data, hora, medicoNome, tipoConsulta, motivoConsulta, diagnostico, anotacoesMedico);
+
+            JOptionPane.showMessageDialog(this, "✓ Consulta agendada com sucesso!\n\nVocê pode agendar outra consulta ou fechar esta janela.", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+            limparCampos();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Erro ao agendar consulta: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private boolean validarCampos() {
+        // Validar CPF
+        String cpf = cpfField.getText().replaceAll("[^0-9]", "");
+        if (cpf.isEmpty() || cpf.contains("_") || cpf.length() != 11) {
+            JOptionPane.showMessageDialog(this, "CPF é obrigatório e deve ter 11 dígitos!", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        // Validar médico
+        if (medicosComboBox.getSelectedIndex() == 0) {
+            JOptionPane.showMessageDialog(this, "Selecione um médico!", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        // Validar tipo de consulta
+        if (especialidadeComboBox.getSelectedIndex() == 0) {
+            JOptionPane.showMessageDialog(this, "Selecione o tipo de consulta!", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        // Validar data
         String data = dataField.getText();
-        String hora = horarioField.getText();
+        if (data.isEmpty() || data.equals("dd/MM/yyyy") || data.contains("_")) {
+            JOptionPane.showMessageDialog(this, "Data é obrigatória!", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
 
-        String medicoNome = (String) medicosComboBox.getSelectedItem();
-        String tipoConsulta = (String) especialidadeComboBox.getSelectedItem();
+        // Validar motivo da consulta
+        if (motivoConsultaArea.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Motivo da consulta é obrigatório!", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
 
-        consultaService.salvarConsulta(pacienteCpf, data, hora, medicoNome, tipoConsulta);
-
-        JOptionPane.showMessageDialog(this, "Consulta agendada com sucesso!");
+        return true;
     }
 
     private void popularMedicos() {
@@ -342,4 +480,21 @@ public class TelaAgendamentoConsulta extends JFrame {
             }
         });
     }
+
+    private void limparCampos() {
+        if (cpfField != null) {
+            cpfField.setText("");
+        }
+        if (dataField != null) {
+            dataField.setText("");
+        }
+        if (medicosComboBox != null) medicosComboBox.setSelectedIndex(0);
+        if (especialidadeComboBox != null) especialidadeComboBox.setSelectedIndex(0);
+        if (horaComboBox != null) horaComboBox.setSelectedIndex(0);
+        if (minutoComboBox != null) minutoComboBox.setSelectedIndex(0);
+        if (motivoConsultaArea != null) motivoConsultaArea.setText("");
+        if (diagnosticoArea != null) diagnosticoArea.setText("");
+        if (anotacoesMedicoArea != null) anotacoesMedicoArea.setText("");
+    }
+
 }

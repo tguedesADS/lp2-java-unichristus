@@ -36,6 +36,15 @@ public class Consulta {
     @JoinColumn(name = "paciente_id", nullable = false)
     private Paciente paciente;
 
+    @Column(columnDefinition = "TEXT")
+    private String motivoConsulta;
+
+    @Column(columnDefinition = "TEXT")
+    private String diagnostico;
+
+    @Column(columnDefinition = "TEXT")
+    private String anotacoesMedico;
+
     public Consulta(LocalDate data, LocalTime hora, String tipoConsulta, ResponsavelSaude responsavelSaude, Paciente paciente) {
         this.data = data;
         this.hora = hora;
