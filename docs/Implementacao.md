@@ -1,8 +1,4 @@
-# Registro de Implementações
-
-## Data: 27/11/2025
-
-### Refatoração da Tela de Pacientes
+# Refatorações
 
 #### Alterações realizadas:
 
@@ -495,3 +491,5 @@
 #### Arquivos modificados:
 - `TelaAgendamentoConsulta.java` - Removido dispose() após salvar
 - `TelaConsultas.java` - Atualizado método atualizarDadosConsulta()
+
+# Implementações
