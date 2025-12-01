@@ -10,7 +10,7 @@ services:
       MYSQL_DATABASE: projetoextensao
       MYSQL_ROOT_HOST: '%'
     ports:
-      - "3307:3306"iij
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
