@@ -33,6 +33,10 @@ public class NavigationService {
     @Lazy
     private TelaAgendamentoConsulta telaAgendamentoConsulta;
 
+    @Lazy
+    @Autowired
+    private TelaEventosSentinelas telaEventosSentinelas;
+
     public void abrirTelaLogin(){
         telaLogin.setVisible(true);
     }
@@ -61,5 +65,9 @@ public class NavigationService {
     public void abrirTelaEdicaoPaciente(Long pacienteId) {
         telaCadastroPacientes.carregarPacienteParaEdicao(pacienteId);
         telaCadastroPacientes.setVisible(true);
+    }
+
+    public void abrirTelaEventosSentinelas() {
+        telaEventosSentinelas.setVisible(true);
     }
 }

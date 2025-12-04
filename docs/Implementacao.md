@@ -493,3 +493,147 @@
 - `TelaConsultas.java` - Atualizado método atualizarDadosConsulta()
 
 # Implementações
+
+
+---
+
+## Data: 03/12/2025
+
+### Sistema de Eventos Sentinelas
+
+#### Funcionalidades implementadas:
+
+**Backend:**
+
+1. **Repositório EventoSentinelaRepositorio**
+   - Criado repositório JPA para gerenciar eventos sentinelas
+   - Métodos implementados:
+     - `findByPaciente(Paciente)` - Busca eventos por paciente
+     - `findByPacienteOrderByDataEventoDesc(Paciente)` - Busca eventos ordenados por data decrescente
+
+2. **Serviço EventoSentinelaService**
+   - Criado serviço para lógica de negócio de eventos
+   - Métodos implementados:
+     - `salvarEvento(EventoSentinela)` - Salva novo evento
+     - `findEventosByPaciente(Paciente)` - Busca eventos de um paciente
+     - `findAllEventos()` - Lista todos os eventos
+     - `findEventoById(Long)` - Busca evento por ID
+
+3. **Correção no modelo EventoSentinela**
+   - Corrigido import do enum EventosOcorridos
+   - Modelo já estava criado com todos os campos necessários
+
+**Frontend:**
+
+1. **Tela TelaEventosSentinelas**
+   - Tela principal para gerenciar eventos sentinelas
+   - Funcionalidades:
+     - Campo CPF com formatação automática (###.###.###-##)
+     - Busca de paciente por CPF
+     - Exibição do nome do paciente encontrado
+     - Tabela com lista de eventos do paciente (ID, Evento, Descrição, Data)
+     - Botão "Adicionar Evento" para cadastrar novo evento
+     - Botão "Voltar" para retornar ao painel principal
+     - Mensagem amigável quando paciente não tem eventos cadastrados
+     - Mensagem amigável quando CPF não é encontrado
+
+2. **Tela TelaCadastroEventoSentinela**
+   - Modal para cadastro de novos eventos
+   - Funcionalidades:
+     - Campo CPF com formatação automática e botão de busca
+     - Campo Nome do Paciente (somente leitura, preenchido automaticamente)
+     - ComboBox com lista de eventos disponíveis:
+       - Tentativa de Suicídio
+       - Quedas
+       - Diarreia
+       - Escabiose
+       - Desidratação
+       - Úlcera por Pressão
+       - Desnutrição
+       - Óbito
+       - Pressão Arterial
+       - Glicemia
+       - Temperatura
+     - Campo Descrição (texto livre, obrigatório)
+     - Campo Data do Evento com formatação (DD/MM/AAAA)
+     - Botões: Salvar, Limpar e Cancelar
+
+3. **Validações implementadas**
+   - CPF obrigatório e deve ter 11 dígitos
+   - Paciente deve existir no banco de dados
+   - Evento deve ser selecionado (não pode ser "Selecione um evento")
+   - Descrição obrigatória
+   - Data obrigatória e no formato correto
+   - Mensagens de erro amigáveis para cada validação
+
+4. **Integração com NavigationService**
+   - Adicionado método `abrirTelaEventosSentinelas()`
+   - Injeção de dependência da TelaEventosSentinelas
+
+5. **Integração com TelaGeral**
+   - Botão "Eventos Sentinelas" agora funcional
+   - Ao clicar, abre a tela de eventos e fecha o painel principal
+
+#### Arquivos criados:
+- `EventoSentinelaRepositorio.java` - Repositório JPA
+- `EventoSentinelaService.java` - Serviço de negócio
+- `TelaEventosSentinelas.java` - Tela principal de eventos
+- `TelaCadastroEventoSentinela.java` - Modal de cadastro
+
+#### Arquivos modificados:
+- `EventoSentinela.java` - Corrigido import do enum
+- `NavigationService.java` - Adicionado método de navegação
+- `TelaGeral.java` - Adicionada funcionalidade ao botão
+
+#### Como funciona:
+
+**Fluxo de uso:**
+
+1. **Acessar a tela:**
+   - No painel principal, clique em "Eventos Sentinelas"
+
+2. **Buscar paciente:**
+   - Digite o CPF do paciente (formatação automática)
+   - Clique em "Buscar"
+   - Sistema exibe o nome do paciente
+   - Tabela mostra todos os eventos cadastrados
+   - Se não houver eventos, exibe mensagem amigável
+
+3. **Cadastrar novo evento:**
+   - Clique em "Adicionar Evento"
+   - Digite o CPF do paciente e clique em "Buscar"
+   - Sistema exibe o nome do paciente
+   - Selecione o tipo de evento no ComboBox
+   - Digite a descrição (exemplo: "150" para glicemia, "sim" para suicídio)
+   - Digite a data do evento (DD/MM/AAAA)
+   - Clique em "Salvar"
+   - Sistema valida todos os campos
+   - Exibe mensagem de sucesso
+   - Atualiza automaticamente a tabela de eventos
+   - Fecha a modal
+
+4. **Mensagens de erro:**
+   - "Por favor, digite um CPF válido com 11 dígitos" - CPF incompleto
+   - "Paciente não encontrado. Verifique o CPF digitado" - CPF não cadastrado
+   - "Nenhum evento registrado para este paciente" - Paciente sem eventos
+   - "Por favor, busque um paciente válido pelo CPF" - Tentou salvar sem buscar paciente
+   - "Por favor, selecione um evento" - Não selecionou evento no ComboBox
+   - "Por favor, preencha a descrição do evento" - Descrição vazia
+   - "Por favor, preencha a data do evento" - Data incompleta
+
+#### Exemplo de uso prático:
+
+**Cenário 1 - Glicemia:**
+- Evento: Glicemia
+- Descrição: 150
+- Data: 03/12/2025
+
+**Cenário 2 - Tentativa de Suicídio:**
+- Evento: Tentativa de Suicídio
+- Descrição: sim
+- Data: 01/12/2025
+
+**Cenário 3 - Pressão Arterial:**
+- Evento: Pressão Arterial
+- Descrição: 140/90
+- Data: 02/12/2025
