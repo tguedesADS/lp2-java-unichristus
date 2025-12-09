@@ -150,7 +150,7 @@ public class TelaEventosSentinelas extends JFrame {
         txtCpfBusca.setFont(new Font("Arial", Font.PLAIN, 16));
         txtCpfBusca.setForeground(azulEscuro);
         CPFUtils.aplicarFormatacaoAutomatica(txtCpfBusca);
-        addPlaceholder(txtCpfBusca, "123.456.789-01");
+        addPlaceholder(txtCpfBusca, "Digite o CPF do paciente");
         pesquisaPanel.add(txtCpfBusca, gbc);
 
         gbc.gridx = 2;
@@ -195,7 +195,7 @@ public class TelaEventosSentinelas extends JFrame {
             refreshButton.addActionListener(e -> {
                 limparTabela();
                 txtCpfBusca.setText("");
-                addPlaceholder(txtCpfBusca, "123.456.789-01");
+                addPlaceholder(txtCpfBusca, "Digite o CPF do paciente");
             });
         }
 
@@ -206,7 +206,7 @@ public class TelaEventosSentinelas extends JFrame {
     private void buscarPaciente() {
         String cpf = txtCpfBusca.getText();
 
-        if (cpf.isEmpty() || cpf.equals("123.456.789-01")) {
+        if (cpf.isEmpty() || cpf.equals("Digite o CPF do paciente")) {
             JOptionPane.showMessageDialog(this, 
                 "Por favor, digite um CPF para pesquisar.", 
                 "Aviso", 
@@ -314,7 +314,7 @@ public class TelaEventosSentinelas extends JFrame {
     private void limparCamposPesquisa() {
         if (txtCpfBusca != null) {
             txtCpfBusca.setText("");
-            addPlaceholder(txtCpfBusca, "123.456.789-01");
+            addPlaceholder(txtCpfBusca, "Digite o CPF do paciente");
         }
         limparTabela();
     }
