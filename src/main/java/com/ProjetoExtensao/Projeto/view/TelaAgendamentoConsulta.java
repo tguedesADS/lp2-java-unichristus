@@ -9,6 +9,7 @@ import com.ProjetoExtensao.Projeto.servicos.ConsultaService;
 import com.ProjetoExtensao.Projeto.servicos.NavigationService;
 import com.ProjetoExtensao.Projeto.servicos.PacienteService;
 import com.ProjetoExtensao.Projeto.servicos.ResponsavelService;
+import com.ProjetoExtensao.Projeto.utils.CPFUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -369,7 +370,7 @@ public class TelaAgendamentoConsulta extends JFrame {
         }
 
         try {
-            String pacienteCpf = cpfField.getText().replaceAll("[^0-9]", "");
+            String pacienteCpf = CPFUtils.limparCPF(cpfField.getText());
             String data = dataField.getText();
             String hora = horaComboBox.getSelectedItem() + ":" + minutoComboBox.getSelectedItem();
 
@@ -398,9 +399,9 @@ public class TelaAgendamentoConsulta extends JFrame {
     }
 
     private boolean validarCampos() {
-        // Validar CPF
-        String cpf = cpfField.getText().replaceAll("[^0-9]", "");
-        if (cpf.isEmpty() || cpf.contains("_") || cpf.length() != 11) {
+        // Validar CPF usando a classe utilitária
+        String cpf = CPFUtils.limparCPF(cpfField.getText());
+        if (cpf.isEmpty() || !CPFUtils.validarTamanhoCPF(cpf)) {
             JOptionPane.showMessageDialog(this, "CPF é obrigatório e deve ter 11 dígitos!", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
             return false;
         }

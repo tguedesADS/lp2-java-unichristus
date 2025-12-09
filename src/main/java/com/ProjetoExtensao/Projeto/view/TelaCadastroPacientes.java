@@ -4,6 +4,7 @@ import com.ProjetoExtensao.Projeto.infra.Cores;
 import com.ProjetoExtensao.Projeto.infra.DateTimeFormatter;
 import com.ProjetoExtensao.Projeto.models.Paciente;
 import com.ProjetoExtensao.Projeto.servicos.PacienteService;
+import com.ProjetoExtensao.Projeto.utils.CPFUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -200,8 +201,8 @@ public class TelaCadastroPacientes extends JFrame {
 
             paciente.setNomeCompleto(txtNome.getText());
             
-            // Remover formatação do CPF (pontos e traço)
-            String cpfLimpo = txtCPF.getText().replaceAll("[^0-9]", "");
+            // Remover formatação do CPF usando a classe utilitária
+            String cpfLimpo = CPFUtils.limparCPF(txtCPF.getText());
             paciente.setCpf(cpfLimpo);
 
             // Converter data de nascimento de DD/MM/AAAA para LocalDate
@@ -261,9 +262,9 @@ public class TelaCadastroPacientes extends JFrame {
             return false;
         }
 
-        // Validar CPF (deve ter 11 dígitos)
-        String cpf = txtCPF.getText().replaceAll("[^0-9]", "");
-        if (cpf.length() != 11) {
+        // Validar CPF usando a classe utilitária
+        String cpf = CPFUtils.limparCPF(txtCPF.getText());
+        if (!CPFUtils.validarTamanhoCPF(cpf)) {
             JOptionPane.showMessageDialog(this, "CPF deve conter 11 dígitos!", "Erro de Validação", JOptionPane.ERROR_MESSAGE);
             return false;
         }

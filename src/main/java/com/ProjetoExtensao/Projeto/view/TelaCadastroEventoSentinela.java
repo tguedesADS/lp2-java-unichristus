@@ -5,6 +5,7 @@ import com.ProjetoExtensao.Projeto.models.EventoSentinela;
 import com.ProjetoExtensao.Projeto.models.Paciente;
 import com.ProjetoExtensao.Projeto.servicos.EventoSentinelaService;
 import com.ProjetoExtensao.Projeto.servicos.PacienteService;
+import com.ProjetoExtensao.Projeto.utils.CPFUtils;
 import com.ProjetoExtensao.Projeto.utils.EventosOcorridos;
 import jakarta.annotation.PostConstruct;
 import lombok.NoArgsConstructor;
@@ -198,9 +199,9 @@ public class TelaCadastroEventoSentinela extends JFrame {
     }
 
     private void buscarPacientePorCpf() {
-        String cpf = txtCpf.getText().replaceAll("[^0-9]", "");
+        String cpfLimpo = CPFUtils.limparCPF(txtCpf.getText());
         
-        if (cpf.length() != 11) {
+        if (!CPFUtils.validarTamanhoCPF(cpfLimpo)) {
             JOptionPane.showMessageDialog(this, 
                 "Por favor, digite um CPF válido com 11 dígitos.", 
                 "CPF Inválido", 
@@ -209,7 +210,7 @@ public class TelaCadastroEventoSentinela extends JFrame {
         }
 
         try {
-            pacienteAtual = pacienteService.findPacienteByCpf(cpf);
+            pacienteAtual = pacienteService.findPacienteByCpf(cpfLimpo);
             txtNomePaciente.setText(pacienteAtual.getNomeCompleto());
         } catch (RuntimeException e) {
             pacienteAtual = null;

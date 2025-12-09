@@ -9,6 +9,7 @@ import com.ProjetoExtensao.Projeto.models.Paciente;
 import com.ProjetoExtensao.Projeto.servicos.ConsultaService;
 import com.ProjetoExtensao.Projeto.servicos.NavigationService;
 import com.ProjetoExtensao.Projeto.servicos.PacienteService;
+import com.ProjetoExtensao.Projeto.utils.CPFUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,15 +17,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-import javax.swing.text.AbstractDocument;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.DocumentFilter;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.util.List;
-import java.util.Vector;
 
 @org.springframework.stereotype.Component
 @NoArgsConstructor
@@ -175,8 +171,8 @@ public class TelaConsultas extends JFrame {
         pacientCpfField.setFont(new Font("Arial", Font.PLAIN, 16));
         pacientCpfField.setForeground(azulEscuro);
         
-        // Adicionar formatação automática de CPF
-        aplicarFormatacaoCPF(pacientCpfField);
+        // Adicionar formatação automática de CPF usando a classe utilitária
+        CPFUtils.aplicarFormatacaoAutomatica(pacientCpfField);
         
         addPlaceholder(pacientCpfField, "CPF do Paciente");
         pesquisaPanel.add(pacientCpfField, gbc);
@@ -455,10 +451,10 @@ public class TelaConsultas extends JFrame {
             }
 
             try {
-                // Remover formatação do CPF antes de buscar
-                String cpfLimpo = pacienteCpf.replaceAll("[^0-9]", "");
+                // Remover formatação do CPF antes de buscar usando a classe utilitária
+                String cpfLimpo = CPFUtils.limparCPF(pacienteCpf);
                 
-                if (cpfLimpo.length() != 11) {
+                if (!CPFUtils.validarTamanhoCPF(cpfLimpo)) {
                     JOptionPane.showMessageDialog(this, "CPF inválido. Digite um CPF com 11 dígitos.", "Erro", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
@@ -574,69 +570,6 @@ public class TelaConsultas extends JFrame {
                 if (textField.getText().isEmpty()) {
                     textField.setText(placeholder);
                     textField.setForeground(placeholderColor);
-                }
-            }
-        });
-    }
-
-    // Método para aplicar formatação automática de CPF
-    private void aplicarFormatacaoCPF(JTextField textField) {
-        AbstractDocument doc = (AbstractDocument) textField.getDocument();
-        doc.setDocumentFilter(new DocumentFilter() {
-            @Override
-            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
-                String newStr = string.replaceAll("[^0-9]", ""); // Aceita apenas números
-                if (newStr.isEmpty()) return;
-                
-                String currentText = fb.getDocument().getText(0, fb.getDocument().getLength());
-                String textSemFormatacao = currentText.replaceAll("[^0-9]", "");
-                
-                if (textSemFormatacao.length() + newStr.length() <= 11) {
-                    super.insertString(fb, offset, newStr, attr);
-                    formatarCPFNoTexto(fb);
-                }
-            }
-
-            @Override
-            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
-                String newStr = text.replaceAll("[^0-9]", ""); // Aceita apenas números
-                
-                String currentText = fb.getDocument().getText(0, fb.getDocument().getLength());
-                String textSemFormatacao = currentText.replaceAll("[^0-9]", "");
-                
-                // Calcular quantos dígitos serão removidos
-                String textoRemovido = currentText.substring(offset, Math.min(offset + length, currentText.length()));
-                int digitosRemovidos = textoRemovido.replaceAll("[^0-9]", "").length();
-                
-                if (textSemFormatacao.length() - digitosRemovidos + newStr.length() <= 11) {
-                    super.replace(fb, offset, length, newStr, attrs);
-                    formatarCPFNoTexto(fb);
-                }
-            }
-
-            @Override
-            public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
-                super.remove(fb, offset, length);
-                formatarCPFNoTexto(fb);
-            }
-
-            private void formatarCPFNoTexto(FilterBypass fb) throws BadLocationException {
-                String text = fb.getDocument().getText(0, fb.getDocument().getLength());
-                String apenasNumeros = text.replaceAll("[^0-9]", "");
-                
-                StringBuilder formatted = new StringBuilder();
-                for (int i = 0; i < apenasNumeros.length(); i++) {
-                    if (i == 3 || i == 6) {
-                        formatted.append(".");
-                    } else if (i == 9) {
-                        formatted.append("-");
-                    }
-                    formatted.append(apenasNumeros.charAt(i));
-                }
-                
-                if (!text.equals(formatted.toString())) {
-                    fb.remove(0, fb.getDocument().getLength());
-                    fb.insertString(0, formatted.toString(), null);
                 }
             }
         });

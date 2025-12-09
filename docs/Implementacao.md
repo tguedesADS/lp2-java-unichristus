@@ -637,3 +637,111 @@
 - Evento: Pressão Arterial
 - Descrição: 140/90
 - Data: 02/12/2025
+
+
+---
+
+## Data: 08/12/2025
+
+### Refatoração da Tela de Eventos Sentinelas
+
+#### Alterações realizadas:
+
+1. **Novo layout seguindo o padrão da tela de Consultas**
+   - Adicionado cabeçalho institucional usando `PanelsFactory`
+   - Seção "Eventos Sentinelas" com botão "Novo Evento"
+   - Painel "Parâmetros de Pesquisa" com campo CPF formatado
+   - Seção "Detalhes do Evento" com scroll vertical
+   - Rodapé institucional
+
+2. **Campos de detalhes do evento**
+   - Evento (ID)
+   - Tipo de Evento
+   - Data do Evento
+   - Paciente (nome completo)
+   - Descrição (área de texto)
+   - Observações (área de texto)
+
+3. **Funcionalidades implementadas**
+   - Busca de paciente por CPF com formatação automática
+   - Exibição de detalhes do evento em campos somente leitura
+   - Seleção de múltiplos eventos quando o paciente possui mais de um
+   - Botão "Atualizar" para limpar os campos
+   - Mensagens amigáveis para diferentes situações (paciente não encontrado, sem eventos, etc.)
+
+#### Arquivos modificados:
+- `TelaEventosSentinelas.java` - Refatorada completamente seguindo o novo padrão
+
+---
+
+### Criação da Classe Utilitária CPFUtils
+
+#### Problema identificado:
+- Código repetitivo em várias telas para validação e formatação de CPF
+- Mesma lógica de `DocumentFilter` duplicada em múltiplos arquivos
+- Dificuldade de manutenção e inconsistências
+
+#### Solução implementada:
+
+**Criada classe `CPFUtils` no pacote `utils` com os seguintes métodos:**
+
+1. **`limparCPF(String cpf)`**
+   - Remove toda formatação do CPF (pontos e traço)
+   - Retorna apenas os números
+   - Exemplo: "123.456.789-01" → "12345678901"
+
+2. **`formatarCPF(String cpf)`**
+   - Adiciona formatação ao CPF (pontos e traço)
+   - Exemplo: "12345678901" → "123.456.789-01"
+
+3. **`validarTamanhoCPF(String cpf)`**
+   - Valida se o CPF tem exatamente 11 dígitos
+   - Retorna `true` ou `false`
+
+4. **`aplicarFormatacaoAutomatica(JTextField textField)`**
+   - Aplica formatação automática enquanto o usuário digita
+   - Aceita apenas números
+   - Limita a 11 dígitos
+   - Adiciona pontos e traço automaticamente
+
+#### Telas refatoradas para usar CPFUtils:
+- `TelaConsultas.java`
+- `TelaEventosSentinelas.java`
+- `TelaCadastroEventoSentinela.java`
+- `TelaCadastroPacientes.java`
+- `TelaAgendamentoConsulta.java`
+
+#### Benefícios:
+- Código mais limpo e organizado
+- Fácil manutenção (alterações em um único lugar)
+- Consistência em todas as telas
+- Código mais fácil de entender para iniciantes
+- Redução de duplicação de código
+
+#### Arquivos criados:
+- `src/main/java/com/ProjetoExtensao/Projeto/utils/CPFUtils.java`
+
+#### Exemplo de uso:
+
+**Antes:**
+```java
+String cpf = txtCpf.getText().replaceAll("[^0-9]", "");
+if (cpf.length() != 11) {
+    // erro
+}
+```
+
+**Depois:**
+```java
+String cpf = CPFUtils.limparCPF(txtCpf.getText());
+if (!CPFUtils.validarTamanhoCPF(cpf)) {
+    // erro
+}
+```
+
+**Aplicar formatação automática:**
+```java
+// Antes: código complexo com DocumentFilter (60+ linhas)
+// Depois: uma linha simples
+CPFUtils.aplicarFormatacaoAutomatica(txtCpfField);
+```

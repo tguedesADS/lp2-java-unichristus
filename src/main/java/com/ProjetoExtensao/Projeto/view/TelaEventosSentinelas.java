@@ -7,6 +7,7 @@ import com.ProjetoExtensao.Projeto.models.Paciente;
 import com.ProjetoExtensao.Projeto.servicos.EventoSentinelaService;
 import com.ProjetoExtensao.Projeto.servicos.NavigationService;
 import com.ProjetoExtensao.Projeto.servicos.PacienteService;
+import com.ProjetoExtensao.Projeto.utils.CPFUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,10 +15,6 @@ import org.springframework.stereotype.Component;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.text.AbstractDocument;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.DocumentFilter;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
@@ -156,7 +153,7 @@ public class TelaEventosSentinelas extends JFrame {
         txtCpfBusca = new JTextField();
         txtCpfBusca.setFont(new Font("Arial", Font.PLAIN, 16));
         txtCpfBusca.setForeground(azulEscuro);
-        aplicarFormatacaoCPF(txtCpfBusca);
+        CPFUtils.aplicarFormatacaoAutomatica(txtCpfBusca);
         addPlaceholder(txtCpfBusca, "123.456.789-01");
         pesquisaPanel.add(txtCpfBusca, gbc);
 
@@ -355,9 +352,9 @@ public class TelaEventosSentinelas extends JFrame {
         }
 
         try {
-            String cpfLimpo = cpf.replaceAll("[^0-9]", "");
+            String cpfLimpo = CPFUtils.limparCPF(cpf);
             
-            if (cpfLimpo.length() != 11) {
+            if (!CPFUtils.validarTamanhoCPF(cpfLimpo)) {
                 JOptionPane.showMessageDialog(this, 
                     "CPF inválido. Digite um CPF com 11 dígitos.", 
                     "Erro", 
