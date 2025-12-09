@@ -45,6 +45,14 @@ public class TelaCadastroEventoSentinela extends JFrame {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
+        
+        // Adicionar listener para limpar campos ao fechar
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                limparCampos();
+            }
+        });
 
         JPanel panelMain = new JPanel(new GridBagLayout());
         panelMain.setBackground(Cores.COR_FUNDO_CLARO);
@@ -146,7 +154,10 @@ public class TelaCadastroEventoSentinela extends JFrame {
         
         btnSalvar.addActionListener(e -> salvarEvento());
         btnLimpar.addActionListener(e -> limparCampos());
-        btnCancelar.addActionListener(e -> dispose());
+        btnCancelar.addActionListener(e -> {
+            limparCampos();
+            dispose();
+        });
         
         panelBotoes.add(btnSalvar);
         panelBotoes.add(btnLimpar);

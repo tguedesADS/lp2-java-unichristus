@@ -48,6 +48,14 @@ public class TelaEventosSentinelas extends JFrame {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
+        
+        // Adicionar listener para limpar campos ao fechar
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                limparCampos();
+            }
+        });
 
         JPanel panelMain = new JPanel(new BorderLayout(10, 10));
         panelMain.setBackground(Cores.COR_FUNDO_CLARO);
@@ -71,6 +79,7 @@ public class TelaEventosSentinelas extends JFrame {
 
         JButton btnVoltar = createButton("Voltar");
         btnVoltar.addActionListener(e -> {
+            limparCampos();
             navigationService.abrirTelaGeral();
             dispose();
         });
@@ -208,5 +217,12 @@ public class TelaEventosSentinelas extends JFrame {
     public void setCpfBusca(String cpf) {
         txtCpfBusca.setText(cpf);
         buscarPaciente();
+    }
+
+    public void limparCampos() {
+        txtCpfBusca.setText("");
+        lblNomePaciente.setText("");
+        limparTabela();
+        pacienteAtual = null;
     }
 }

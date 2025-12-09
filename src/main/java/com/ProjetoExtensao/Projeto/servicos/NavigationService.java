@@ -68,6 +68,7 @@ public class NavigationService {
     }
 
     public void abrirTelaEventosSentinelas() {
+        telaEventosSentinelas.limparCampos();
         telaEventosSentinelas.setVisible(true);
     }
 }
