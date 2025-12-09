@@ -245,9 +245,6 @@ public class TelaCadastroEventoSentinela extends JFrame {
                 "Sucesso", 
                 JOptionPane.INFORMATION_MESSAGE);
 
-            // Atualizar a tabela na tela principal
-            telaEventosSentinelas.atualizarTabelaEventos();
-
             limparCampos();
             dispose();
 
