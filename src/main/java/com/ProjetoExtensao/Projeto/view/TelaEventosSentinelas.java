@@ -333,4 +333,13 @@ public class TelaEventosSentinelas extends JFrame {
         limparCamposPesquisa();
         pacienteAtual = null;
     }
+
+    public void atualizarTabelaAposCadastro(Paciente paciente) {
+        if (paciente != null) {
+            pacienteAtual = paciente;
+            txtCpfBusca.setText(CPFUtils.formatarCPF(paciente.getCpf()));
+            txtCpfBusca.setForeground(Cores.COR_RODAPE);
+            atualizarTabelaEventos();
+        }
+    }
 }
